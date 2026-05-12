@@ -64,6 +64,9 @@ Security:\n\
     }
 
     if vendor == Vendor::Robstride {
+        if model == "4340P" || model == "4340" {
+            model = "rs-00".to_string();
+        }
         if feedback_id == 0x11 {
             feedback_id = 0xFD;
         }

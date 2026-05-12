@@ -15,8 +15,8 @@ pub fn parse_args() -> HashMap<String, String> {
         if !k.starts_with("--") {
             // Accept the Python CLI style `motor_cli scan --vendor ...` as a
             // shorthand for the Rust CLI's historical `--mode scan` form.
-            if out.get("mode").is_none() {
-                apply_bare_command(&mut out, &k);
+            if out.get("mode").is_none() && is_mode_word(&k) {
+                out.insert("mode".to_string(), k);
             }
             continue;
         }
@@ -33,23 +33,6 @@ pub fn parse_args() -> HashMap<String, String> {
         }
     }
     out
-}
-
-fn apply_bare_command(out: &mut HashMap<String, String>, command: &str) {
-    match command {
-        "robstride-read-param" => {
-            out.insert("vendor".to_string(), "robstride".to_string());
-            out.insert("mode".to_string(), "read-param".to_string());
-        }
-        "robstride-write-param" => {
-            out.insert("vendor".to_string(), "robstride".to_string());
-            out.insert("mode".to_string(), "write-param".to_string());
-        }
-        mode if is_mode_word(mode) => {
-            out.insert("mode".to_string(), mode.to_string());
-        }
-        _ => {}
-    }
 }
 
 fn is_mode_word(s: &str) -> bool {
@@ -235,8 +218,7 @@ RobStride extras:\n\
   --feedback-ids <list>     for scan host_id candidates, default 0xFD,0xFF,0xFE,0x00,0xAA\n\
   --timeout-ms <ms>         for scan ping timeout, default 80\n\
   --param-timeout-ms <ms>   for scan parameter fallback timeout, default 120\n\
-  --zero-exp 1/0            for zero/set-zero, default 0 (run experimental sequence: disable -> set-zero -> range -> optional save)\n\
-  --zero-range <mode>       for zero/set-zero, neg-pi-pi(default) or zero-2pi (writes zero_sta 1/0)\n\
+  --zero-exp 1/0            for zero/set-zero, default 0 (run experimental sequence: disable -> set-zero -> optional save)\n\
   --offset-negate 1/0       for zero-by-offset, default 0 (write +mechPos to 0x2005)\n\
   --store 1/0               for zero-by-offset and zero-exp, default 1 (send save-parameters)\n\
   --start-id <hex|dec>      for scan, default 1\n\
@@ -300,19 +282,6 @@ mod tests {
         assert!(is_mode_word("scan"));
         assert!(is_mode_word("read-param"));
         assert!(!is_mode_word("can0"));
-    }
-
-    #[test]
-    fn robstride_param_command_alias_selects_vendor_and_mode() {
-        let mut args = HashMap::new();
-        apply_bare_command(&mut args, "robstride-read-param");
-        assert_eq!(args.get("vendor").map(String::as_str), Some("robstride"));
-        assert_eq!(args.get("mode").map(String::as_str), Some("read-param"));
-
-        let mut args = HashMap::new();
-        apply_bare_command(&mut args, "robstride-write-param");
-        assert_eq!(args.get("vendor").map(String::as_str), Some("robstride"));
-        assert_eq!(args.get("mode").map(String::as_str), Some("write-param"));
     }
 
     #[test]

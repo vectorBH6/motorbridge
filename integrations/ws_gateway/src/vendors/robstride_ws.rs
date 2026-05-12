@@ -28,15 +28,6 @@ fn parse_param_value(v: &Value) -> Option<String> {
     })
 }
 
-fn parse_i32_hex_or_dec(s: &str) -> Result<i32, String> {
-    if let Some(hex) = s.strip_prefix("0x") {
-        i32::from_str_radix(hex, 16).map_err(|e| format!("invalid integer {s}: {e}"))
-    } else {
-        s.parse::<i32>()
-            .map_err(|e| format!("invalid integer {s}: {e}"))
-    }
-}
-
 pub(crate) fn handle_robstride_read_param(
     motor: &Arc<RobstrideMotor>,
     v: &Value,
@@ -49,24 +40,6 @@ pub(crate) fn handle_robstride_read_param(
         "i8" => Ok(
             json!({"param_id": param_id, "type":"i8", "value": motor.get_parameter_i8(param_id, timeout).map_err(|e| e.to_string())? }),
         ),
-        "i16" => match motor
-            .get_parameter(param_id, timeout)
-            .map_err(|e| e.to_string())?
-        {
-            RobstrideParameterValue::I16(x) => {
-                Ok(json!({"param_id": param_id, "type":"i16", "value": x }))
-            }
-            _ => Err(format!("parameter 0x{param_id:04X} is not i16")),
-        },
-        "i32" => match motor
-            .get_parameter(param_id, timeout)
-            .map_err(|e| e.to_string())?
-        {
-            RobstrideParameterValue::I32(x) => {
-                Ok(json!({"param_id": param_id, "type":"i32", "value": x }))
-            }
-            _ => Err(format!("parameter 0x{param_id:04X} is not i32")),
-        },
         "u8" => match motor
             .get_parameter(param_id, timeout)
             .map_err(|e| e.to_string())?
@@ -111,13 +84,7 @@ pub(crate) fn handle_robstride_write_param(
     let raw = parse_param_value(v).ok_or_else(|| "missing value".to_string())?;
     let pval = match ty.as_str() {
         "i8" => RobstrideParameterValue::I8(
-            parse_i32_hex_or_dec(&raw).map_err(|e| format!("invalid i8 value: {e}"))? as i8,
-        ),
-        "i16" => RobstrideParameterValue::I16(
-            parse_i32_hex_or_dec(&raw).map_err(|e| format!("invalid i16 value: {e}"))? as i16,
-        ),
-        "i32" => RobstrideParameterValue::I32(
-            parse_i32_hex_or_dec(&raw).map_err(|e| format!("invalid i32 value: {e}"))?,
+            parse_u32_hex_or_dec(&raw).map_err(|e| format!("invalid i8 value: {e}"))? as i8,
         ),
         "u8" => RobstrideParameterValue::U8(
             parse_u32_hex_or_dec(&raw).map_err(|e| format!("invalid u8 value: {e}"))? as u8,

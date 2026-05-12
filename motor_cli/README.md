@@ -76,7 +76,6 @@ Current status:
 Notes:
 - RobStride default `--feedback-id` is `0xFD`; scan defaults to `--feedback-ids 0xFD,0xFF,0xFE,0x00,0xAA`.
 - RobStride `feedback_id` / `host_id` is not the motor `device_id`; scan reports the motor ID as `probe` / `device_id`.
-- RobStride `--model` must match the physical motor for parameter access. RS00-RS06 use separate parameter/function-code tables; `read-param` and `write-param` are typed from the selected model.
 - RobStride `pos-vel` ignores `--vel/--kd/--tau` by design (warning only, no hard error).
 
 ## 1. Argument Parsing Rules
@@ -237,7 +236,7 @@ motor_cli \
 | `--set-motor-id` | u16 opt | none | id-set flow | Set device ID, 1..255 |
 | `--store` | `0/1` | `1` | id-set flow | Save parameters |
 | `--param-id` | u16 | required for param modes | read/write param | Parameter ID |
-| `--param-value` | typed | required for write | write-param | Parsed by selected RobStride model metadata |
+| `--param-value` | typed | required for write | write-param | Parsed by parameter metadata |
 
 ### 4.3 Control Arguments by Mode
 
@@ -251,9 +250,6 @@ motor_cli \
 Notes:
 
 - RobStride unified control currently supports `MIT` / `POS_VEL` / `VEL`.
-- Supported RobStride models are `rs-00`, `rs-01`, `rs-02`, `rs-03`, `rs-04`, `rs-05`, and `rs-06`.
-- Always pass the real motor model. Basic control command shape is shared, but native function-code parameters differ by model; a parameter ID may have a different name or type on a different RS model.
-- The built-in RS00-RS06 parameter tables are aligned with RobStride/Product_Information commit `ba7236bc26417766fda71e75ae128c66dbd21aba`.
 - Torque/current is currently parameter-level only (via `write-param`, for example `iq_ref` and limit registers), not a first-class high-level mode.
 - In RobStride `mit`, all five unified inputs are effective: `--pos`, `--vel`, `--kp`, `--kd`, `--tau`.
 - RobStride `mit` units follow unified semantics: `pos` in `rad`, `vel` in `rad/s`, `tau` in `Nm` (`kp/kd` are MIT loop gains).
@@ -301,9 +297,6 @@ motor_cli \
 motor_cli \
   --vendor robstride --channel can0 --model rs-06 --motor-id 20 --feedback-id 0xFD \
   --mode write-param --param-id 0x7005 --param-value 2
-
-# Manual function-code parameters also use the selected model table.
-# For example, RS00/RS05/RS06 do not expose identical 0x2000/0x3000 names and types.
 
 # Set motor ID (old 1 -> new 11) and persist
 motor_cli \

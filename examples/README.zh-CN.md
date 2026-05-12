@@ -43,7 +43,6 @@
   - 寄存器和改 ID 流程仍主要走 CLI、Python SDK 和校准工具
 - RobStride:
   - 模式: `ping`、`enable`、`disable`、`mit`、`vel`、`read-param`、`write-param`
-  - 型号: `rs-00` 到 `rs-06`；示例中请替换为真实电机型号，因为参数表按型号区分
   - 参数示例走 RobStride 的 ABI / binding 接口
 - MyActuator:
   - 模式: `scan`、`enable`、`disable`、`stop`、`status`、`current`、`vel`、`pos`、`version`、`mode-query`

@@ -23,20 +23,6 @@ pub(crate) fn build_scan_model_hints(preferred_model: &str) -> Vec<String> {
     out
 }
 
-pub(crate) fn ensure_robstride_model(model: &str) -> Result<(), String> {
-    match model.trim().to_ascii_lowercase().as_str() {
-        "rs-00" | "rs00" | "rs-01" | "rs01" | "rs-02" | "rs02" | "rs-03" | "rs03"
-        | "rs-04" | "rs04" | "rs-05" | "rs05" | "rs-06" | "rs06" => Ok(()),
-        "" | "auto" | "all" | "*" => Err(
-            "RobStride requires a concrete model (rs-00..rs-06) for interaction because parameter tables differ by model"
-                .to_string(),
-        ),
-        other => Err(format!(
-            "unsupported RobStride model '{other}'; expected rs-00..rs-06"
-        )),
-    }
-}
-
 pub(crate) fn build_scan_feedback_hints(base_feedback_id: u16, motor_id: u16) -> Vec<u16> {
     let mut out = Vec::new();
     let inferred = motor_id.saturating_add(0x10);

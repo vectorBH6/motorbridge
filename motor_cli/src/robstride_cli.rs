@@ -10,33 +10,14 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::time::Duration;
 
-fn parse_robstride_param_value(
-    model: &str,
-    param_id: u16,
-    raw: &str,
-) -> Result<ParameterValue, String> {
-    let info = motor_vendor_robstride::parameter_info_for_model(model, param_id)
-        .ok_or_else(|| format!("unknown RobStride parameter 0x{param_id:04X} for model {model}"))?;
+fn parse_robstride_param_value(param_id: u16, raw: &str) -> Result<ParameterValue, String> {
+    let info = motor_vendor_robstride::parameter_info(param_id)
+        .ok_or_else(|| format!("unknown RobStride parameter 0x{param_id:04X}"))?;
     match info.data_type {
         ParameterDataType::Int8 => raw
             .parse::<i8>()
             .map(ParameterValue::I8)
             .map_err(|e| format!("invalid --param-value: {e}")),
-        ParameterDataType::Int16 => raw
-            .parse::<i16>()
-            .map(ParameterValue::I16)
-            .map_err(|e| format!("invalid --param-value: {e}")),
-        ParameterDataType::Int32 => {
-            if let Some(hex) = raw.strip_prefix("0x") {
-                i32::from_str_radix(hex, 16)
-                    .map(ParameterValue::I32)
-                    .map_err(|e| format!("invalid --param-value: {e}"))
-            } else {
-                raw.parse::<i32>()
-                    .map(ParameterValue::I32)
-                    .map_err(|e| format!("invalid --param-value: {e}"))
-            }
-        }
         ParameterDataType::UInt8 => raw
             .parse::<u8>()
             .map(ParameterValue::U8)
@@ -59,28 +40,19 @@ fn parse_robstride_param_value(
             .parse::<f32>()
             .map(ParameterValue::F32)
             .map_err(|e| format!("invalid --param-value: {e}")),
-        ParameterDataType::String => Err(format!(
-            "RobStride string parameter 0x{param_id:04X} write is not supported by this CLI"
-        )),
     }
 }
 
-fn print_robstride_param_value(model: &str, param_id: u16, value: ParameterValue) {
-    let name = motor_vendor_robstride::parameter_info_for_model(model, param_id)
+fn print_robstride_param_value(param_id: u16, value: ParameterValue) {
+    let name = motor_vendor_robstride::parameter_info(param_id)
         .map(|info| info.name)
         .unwrap_or("unknown");
     match value {
         ParameterValue::I8(v) => println!("param 0x{param_id:04X} ({name}) = {v}"),
-        ParameterValue::I16(v) => println!("param 0x{param_id:04X} ({name}) = {v}"),
-        ParameterValue::I32(v) => println!("param 0x{param_id:04X} ({name}) = {v}"),
         ParameterValue::U8(v) => println!("param 0x{param_id:04X} ({name}) = {v}"),
         ParameterValue::U16(v) => println!("param 0x{param_id:04X} ({name}) = {v}"),
         ParameterValue::U32(v) => println!("param 0x{param_id:04X} ({name}) = {v}"),
         ParameterValue::F32(v) => println!("param 0x{param_id:04X} ({name}) = {v:.6}"),
-        ParameterValue::String4(v) => println!(
-            "param 0x{param_id:04X} ({name}) raw-string-chunk = {:02x?}",
-            v
-        ),
     }
 }
 
@@ -99,16 +71,6 @@ fn validate_robstride_host_id(id: u16, name: &str) -> Result<u16, String> {
         Err(format!(
             "RobStride {name}/host_id must be in 0..255, got {id}"
         ))
-    }
-}
-
-fn parse_robstride_zero_range(raw: &str) -> Result<(u8, &'static str), String> {
-    match raw.trim().to_ascii_lowercase().as_str() {
-        "neg-pi-pi" | "-pi-pi" | "signed" | "1" => Ok((1, "-pi..pi")),
-        "zero-2pi" | "0-2pi" | "unsigned" | "0" => Ok((0, "0..2pi")),
-        other => Err(format!(
-            "invalid --zero-range '{other}': expected neg-pi-pi or zero-2pi"
-        )),
     }
 }
 
@@ -147,8 +109,6 @@ pub fn run_robstride(
     let dt_ms = get_u64(args, "dt-ms", 20)?;
     let ensure_mode = get_u64(args, "ensure-mode", 1)? != 0;
     let zero_exp = get_u64(args, "zero-exp", 0)? != 0;
-    let zero_range = get_str(args, "zero-range", "neg-pi-pi");
-    let (zero_sta_target, zero_range_label) = parse_robstride_zero_range(&zero_range)?;
     let set_motor_id = get_opt_u16_hex_or_dec(args, "set-motor-id")?;
     let store_after_set = get_u64(args, "store", 1)? != 0;
     let validated_set_motor_id = if vendor_name == "robstride" {
@@ -454,7 +414,7 @@ pub fn run_robstride(
         "read-param" => {
             let param_id = get_u16_hex_or_dec(args, "param-id", 0)?;
             let value = motor.get_parameter(param_id, Duration::from_millis(500))?;
-            print_robstride_param_value(model, param_id, value);
+            print_robstride_param_value(param_id, value);
             controller.close_bus()?;
             return Ok(());
         }
@@ -463,11 +423,11 @@ pub fn run_robstride(
             let raw = args
                 .get("param-value")
                 .ok_or_else(|| "missing --param-value".to_string())?;
-            let value = parse_robstride_param_value(model, param_id, raw)?;
+            let value = parse_robstride_param_value(param_id, raw)?;
             motor.write_parameter(param_id, value)?;
             std::thread::sleep(Duration::from_millis(50));
             let verify = motor.get_parameter(param_id, Duration::from_millis(500))?;
-            print_robstride_param_value(model, param_id, verify);
+            print_robstride_param_value(param_id, verify);
             controller.close_bus()?;
             return Ok(());
         }
@@ -586,7 +546,7 @@ pub fn run_robstride(
                 } else {
                     let pre_mech = motor.get_parameter(0x7019, Duration::from_millis(200)).ok();
                     // Experimental calibration sequence:
-                    // disable -> set-zero -> set startup range -> optional save -> readback hints.
+                    // disable -> set-zero -> optional save -> readback hints.
                     let _ = controller.disable_all();
                     std::thread::sleep(Duration::from_millis(80));
                     if let Err(e) = motor.set_zero_position() {
@@ -600,23 +560,17 @@ pub fn run_robstride(
                         }
                     }
                     std::thread::sleep(Duration::from_millis(80));
-                    motor.write_parameter(0x7029, ParameterValue::U8(zero_sta_target))?;
-                    println!(
-                        "[info] wrote zero_sta(0x7029)={} for {} startup range",
-                        zero_sta_target, zero_range_label
-                    );
-                    std::thread::sleep(Duration::from_millis(80));
                     if store_after_set {
                         motor.save_parameters()?;
                         std::thread::sleep(Duration::from_millis(80));
                     }
                     let zero_sta = motor.get_parameter(0x7029, Duration::from_millis(200)).ok();
                     if let Some(v) = zero_sta {
-                        print_robstride_param_value(model, 0x7029, v);
+                        print_robstride_param_value(0x7029, v);
                     }
                     let post_mech = motor.get_parameter(0x7019, Duration::from_millis(200)).ok();
                     if let Some(v) = post_mech {
-                        print_robstride_param_value(model, 0x7019, v);
+                        print_robstride_param_value(0x7019, v);
                     }
                     let pre_mech_f32 = match pre_mech {
                         Some(ParameterValue::F32(v)) => Some(v),
@@ -631,17 +585,16 @@ pub fn run_robstride(
                         _ => None,
                     };
                     let pos_zero_ok = post_mech_f32.map(|v| v.abs() < 0.05).unwrap_or(false);
-                    let zero_flag_ok = zero_sta_u8.map(|v| v == zero_sta_target).unwrap_or(false);
+                    let zero_flag_ok = zero_sta_u8.map(|v| v != 0).unwrap_or(false);
                     if !(pos_zero_ok || zero_flag_ok) {
                         return Err(format!(
-                            "robstride set-zero verify failed: pre_mechPos={:?}, post_mechPos={:?}, zero_sta={:?}, expected_zero_sta={}. firmware likely ignored zero command in current state",
-                            pre_mech_f32, post_mech_f32, zero_sta_u8, zero_sta_target
+                            "robstride set-zero verify failed: pre_mechPos={:?}, post_mechPos={:?}, zero_sta={:?}. firmware likely ignored zero command in current state",
+                            pre_mech_f32, post_mech_f32, zero_sta_u8
                         )
                         .into());
                     }
                     println!(
-                        "[ok] robstride set-zero experimental sequence finished (zero_range={}, store={})",
-                        zero_range_label,
+                        "[ok] robstride set-zero experimental sequence finished (store={})",
                         if store_after_set { 1 } else { 0 }
                     );
                 }
@@ -743,9 +696,9 @@ mod tests {
 
     #[test]
     fn parse_robstride_param_value_uses_parameter_type() {
-        let mode = parse_robstride_param_value("rs-00", 0x7005, "2").expect("int8 mode");
-        let timeout = parse_robstride_param_value("rs-00", 0x7028, "123").expect("u32 timeout");
-        let mech = parse_robstride_param_value("rs-00", 0x7019, "1.5").expect("f32 mech pos");
+        let mode = parse_robstride_param_value(0x7005, "2").expect("int8 mode");
+        let timeout = parse_robstride_param_value(0x7028, "123").expect("u32 timeout");
+        let mech = parse_robstride_param_value(0x7019, "1.5").expect("f32 mech pos");
 
         match mode {
             ParameterValue::I8(v) => assert_eq!(v, 2),
@@ -759,18 +712,5 @@ mod tests {
             ParameterValue::F32(v) => assert!((v - 1.5).abs() < 1e-6),
             _ => panic!("expected F32"),
         }
-    }
-
-    #[test]
-    fn parse_robstride_zero_range_accepts_both_coordinate_modes() {
-        assert_eq!(
-            parse_robstride_zero_range("neg-pi-pi").unwrap(),
-            (1, "-pi..pi")
-        );
-        assert_eq!(
-            parse_robstride_zero_range("zero-2pi").unwrap(),
-            (0, "0..2pi")
-        );
-        assert!(parse_robstride_zero_range("banana").is_err());
     }
 }

@@ -43,7 +43,6 @@ Cross-language example entry for the current `motorbridge` stack.
   - register / ID workflows remain available through CLI, Python SDK, and calibration tools
 - RobStride:
   - modes: `ping`, `enable`, `disable`, `mit`, `vel`, `read-param`, `write-param`
-  - models: `rs-00` through `rs-06`; use the physical model in examples because parameter tables are model-specific
   - parameter examples use the RobStride ABI and binding helpers
 - MyActuator:
   - modes: `scan`, `enable`, `disable`, `stop`, `status`, `current`, `vel`, `pos`, `version`, `mode-query`

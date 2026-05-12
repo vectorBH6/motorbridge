@@ -9,18 +9,12 @@ use crate::vendors::transport_ws::{
     open_myactuator_controller, open_robstride_controller,
 };
 use super::{
-    as_u16, as_u64, ensure_robstride_model, parse_hex_or_dec, parse_id_list_csv,
-    parse_transport_in_msg, parse_vendor_in_msg,
+    as_u16, as_u64, parse_hex_or_dec, parse_id_list_csv, parse_transport_in_msg,
+    parse_vendor_in_msg,
 };
 
 fn cmd_scan_robstride(v: &Value, base: &Target) -> Result<Value, String> {
     let transport = parse_transport_in_msg(v, base.transport)?;
-    let model = v
-        .get("model")
-        .and_then(Value::as_str)
-        .unwrap_or(&base.model)
-        .to_string();
-    ensure_robstride_model(&model)?;
     let start_id = as_u16(v, "start_id", 1);
     let end_id = as_u16(v, "end_id", 255);
     let timeout_ms = as_u64(v, "timeout_ms", 120);
@@ -61,7 +55,7 @@ fn cmd_scan_robstride(v: &Value, base: &Target) -> Result<Value, String> {
     for mid in start_id..=end_id {
         let mut found = None;
         for fid in &feedback_ids {
-            let motor = match ctrl.add_motor(mid, *fid, &model) {
+            let motor = match ctrl.add_motor(mid, *fid, &base.model) {
                 Ok(m) => m,
                 Err(_) => continue,
             };
@@ -95,7 +89,6 @@ fn cmd_scan_robstride(v: &Value, base: &Target) -> Result<Value, String> {
     Ok(json!({
         "vendor": "robstride",
         "transport": transport.as_str(),
-        "model": model,
         "count": hits.len(),
         "start_id": start_id,
         "end_id": end_id,
