@@ -15,8 +15,8 @@ pub fn parse_args() -> HashMap<String, String> {
         if !k.starts_with("--") {
             // Accept the Python CLI style `motor_cli scan --vendor ...` as a
             // shorthand for the Rust CLI's historical `--mode scan` form.
-            if out.get("mode").is_none() && is_mode_word(&k) {
-                out.insert("mode".to_string(), k);
+            if out.get("mode").is_none() {
+                apply_bare_command(&mut out, &k);
             }
             continue;
         }
@@ -33,6 +33,23 @@ pub fn parse_args() -> HashMap<String, String> {
         }
     }
     out
+}
+
+fn apply_bare_command(out: &mut HashMap<String, String>, command: &str) {
+    match command {
+        "robstride-read-param" => {
+            out.insert("vendor".to_string(), "robstride".to_string());
+            out.insert("mode".to_string(), "read-param".to_string());
+        }
+        "robstride-write-param" => {
+            out.insert("vendor".to_string(), "robstride".to_string());
+            out.insert("mode".to_string(), "write-param".to_string());
+        }
+        mode if is_mode_word(mode) => {
+            out.insert("mode".to_string(), mode.to_string());
+        }
+        _ => {}
+    }
 }
 
 fn is_mode_word(s: &str) -> bool {
@@ -282,6 +299,19 @@ mod tests {
         assert!(is_mode_word("scan"));
         assert!(is_mode_word("read-param"));
         assert!(!is_mode_word("can0"));
+    }
+
+    #[test]
+    fn robstride_param_command_alias_selects_vendor_and_mode() {
+        let mut args = HashMap::new();
+        apply_bare_command(&mut args, "robstride-read-param");
+        assert_eq!(args.get("vendor").map(String::as_str), Some("robstride"));
+        assert_eq!(args.get("mode").map(String::as_str), Some("read-param"));
+
+        let mut args = HashMap::new();
+        apply_bare_command(&mut args, "robstride-write-param");
+        assert_eq!(args.get("vendor").map(String::as_str), Some("robstride"));
+        assert_eq!(args.get("mode").map(String::as_str), Some("write-param"));
     }
 
     #[test]

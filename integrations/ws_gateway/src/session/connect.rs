@@ -1,5 +1,6 @@
-use crate::vendors::hightorque_ws::open_hightorque_bus;
+use crate::commands::ensure_robstride_model;
 use crate::model::{ControllerHandle, MotorHandle, Transport, Vendor};
+use crate::vendors::hightorque_ws::open_hightorque_bus;
 use motor_vendor_damiao::DamiaoController;
 use motor_vendor_hexfellow::HexfellowController;
 use motor_vendor_myactuator::MyActuatorController;
@@ -85,6 +86,7 @@ impl SessionCtx {
                 self.motor = Some(MotorHandle::Myactuator(motor));
             }
             Vendor::Robstride => {
+                ensure_robstride_model(&self.target.model)?;
                 let ctrl = match self.target.transport {
                     Transport::Auto | Transport::SocketCan => {
                         RobstrideController::new_socketcan(&self.target.channel)

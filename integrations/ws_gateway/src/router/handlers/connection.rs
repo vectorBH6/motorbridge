@@ -1,5 +1,7 @@
 use crate::model::{ControllerHandle, MotorHandle, Vendor};
-use crate::commands::{as_bool, as_u16, as_u64, parse_transport_in_msg, parse_vendor_in_msg};
+use crate::commands::{
+    as_bool, as_u16, as_u64, ensure_robstride_model, parse_transport_in_msg, parse_vendor_in_msg,
+};
 use crate::session::SessionCtx;
 use serde_json::{json, Value};
 
@@ -69,9 +71,7 @@ fn handle_set_target(v: &Value, ctx: &mut SessionCtx) -> Result<Value, String> {
     next.feedback_id = as_u16(v, "feedback_id", next.feedback_id);
 
     if next.vendor == Vendor::Robstride {
-        if next.model == "4340" || next.model == "4340P" {
-            next.model = "rs-00".to_string();
-        }
+        ensure_robstride_model(&next.model)?;
         if next.feedback_id == 0x11 {
             next.feedback_id = 0xFD;
         }

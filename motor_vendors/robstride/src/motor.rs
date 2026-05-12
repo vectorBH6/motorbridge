@@ -1,9 +1,10 @@
 use crate::protocol::{
     build_ext_id, decode_ping_reply, decode_read_parameter_value, decode_status_frame,
-    encode_mit_command, encode_parameter_read, encode_parameter_value, encode_parameter_write,
-    ext_id_parts, CommunicationType, PingReply,
+    encode_mit_command, encode_parameter_read, encode_parameter_value,
+    encode_parameter_value_for_model, encode_parameter_write, ext_id_parts, CommunicationType,
+    PingReply,
 };
-use crate::registers::{parameter_info, ParameterDataType, ParameterId};
+use crate::registers::{parameter_info_for_model, ParameterDataType, ParameterId};
 use motor_core::bus::{CanBus, CanFrame};
 use motor_core::device::MotorDevice;
 use motor_core::error::{MotorError, Result};
@@ -86,10 +87,13 @@ pub enum ControlMode {
 #[derive(Debug, Clone, Copy)]
 pub enum ParameterValue {
     I8(i8),
+    I16(i16),
+    I32(i32),
     U8(u8),
     U16(u16),
     U32(u32),
     F32(f32),
+    String4([u8; 4]),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -353,7 +357,8 @@ impl RobstrideMotor {
     }
 
     pub fn write_parameter(&self, param_id: u16, value: ParameterValue) -> Result<()> {
-        let raw = encode_parameter_value(param_id, value)?;
+        let raw = encode_parameter_value_for_model(&self.model, param_id, value)
+            .or_else(|_| encode_parameter_value(param_id, value))?;
         let data = encode_parameter_write(param_id, raw);
         self.send_with_status_ack(
             CommunicationType::WRITE_PARAMETER,
@@ -478,15 +483,20 @@ impl RobstrideMotor {
                     .take()
                     .unwrap_or_else(|| u16::from_le_bytes([frame.data[0], frame.data[1]]));
                 let raw = decode_read_parameter_value(param_id, frame.data)?;
-                let value = if let Some(info) = parameter_info(param_id) {
+                let value = if let Some(info) = parameter_info_for_model(&self.model, param_id) {
                     match info.data_type {
                         ParameterDataType::Int8 => ParameterValue::I8(raw[0] as i8),
+                        ParameterDataType::Int16 => {
+                            ParameterValue::I16(i16::from_le_bytes([raw[0], raw[1]]))
+                        }
+                        ParameterDataType::Int32 => ParameterValue::I32(i32::from_le_bytes(raw)),
                         ParameterDataType::UInt8 => ParameterValue::U8(raw[0]),
                         ParameterDataType::UInt16 => {
                             ParameterValue::U16(u16::from_le_bytes([raw[0], raw[1]]))
                         }
                         ParameterDataType::UInt32 => ParameterValue::U32(u32::from_le_bytes(raw)),
                         ParameterDataType::Float32 => ParameterValue::F32(f32::from_le_bytes(raw)),
+                        ParameterDataType::String => ParameterValue::String4(raw),
                     }
                 } else {
                     // Tolerate unknown vendor firmware params instead of surfacing hard errors

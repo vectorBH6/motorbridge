@@ -1,4 +1,4 @@
-use crate::registers::{parameter_info, ParameterDataType};
+use crate::registers::{parameter_info, parameter_info_for_model, ParameterDataType};
 use motor_core::error::{MotorError, Result};
 
 pub struct CommunicationType;
@@ -157,8 +157,35 @@ pub fn encode_parameter_value(
     let info = parameter_info(param_id).ok_or_else(|| {
         MotorError::InvalidArgument(format!("unknown RobStride parameter 0x{param_id:04X}"))
     })?;
-    let raw = match (info.data_type, value) {
+    encode_parameter_value_with_info(info.data_type, param_id, value)
+}
+
+pub fn encode_parameter_value_for_model(
+    model: &str,
+    param_id: u16,
+    value: crate::motor::ParameterValue,
+) -> Result<[u8; 4]> {
+    let info = parameter_info_for_model(model, param_id).ok_or_else(|| {
+        MotorError::InvalidArgument(format!(
+            "unknown RobStride parameter 0x{param_id:04X} for model {model}"
+        ))
+    })?;
+    encode_parameter_value_with_info(info.data_type, param_id, value)
+}
+
+fn encode_parameter_value_with_info(
+    data_type: ParameterDataType,
+    param_id: u16,
+    value: crate::motor::ParameterValue,
+) -> Result<[u8; 4]> {
+    let raw = match (data_type, value) {
         (ParameterDataType::Int8, crate::motor::ParameterValue::I8(v)) => [v as u8, 0, 0, 0],
+        (ParameterDataType::Int16, crate::motor::ParameterValue::I16(v)) => {
+            let mut out = [0u8; 4];
+            out[0..2].copy_from_slice(&v.to_le_bytes());
+            out
+        }
+        (ParameterDataType::Int32, crate::motor::ParameterValue::I32(v)) => v.to_le_bytes(),
         (ParameterDataType::UInt8, crate::motor::ParameterValue::U8(v)) => [v, 0, 0, 0],
         (ParameterDataType::UInt16, crate::motor::ParameterValue::U16(v)) => {
             let mut out = [0u8; 4];
@@ -167,6 +194,7 @@ pub fn encode_parameter_value(
         }
         (ParameterDataType::UInt32, crate::motor::ParameterValue::U32(v)) => v.to_le_bytes(),
         (ParameterDataType::Float32, crate::motor::ParameterValue::F32(v)) => v.to_le_bytes(),
+        (ParameterDataType::String, crate::motor::ParameterValue::String4(v)) => v,
         _ => {
             return Err(MotorError::InvalidArgument(format!(
                 "type mismatch for parameter 0x{param_id:04X}"
@@ -221,7 +249,8 @@ mod tests {
         let payload = [0u8; 8];
         let ok = decode_read_parameter_value(0x7019, payload).expect("known param");
         assert_eq!(ok, [0, 0, 0, 0]);
-        let unknown = decode_read_parameter_value(0xDEAD, payload).expect("unknown param should pass raw");
+        let unknown =
+            decode_read_parameter_value(0xDEAD, payload).expect("unknown param should pass raw");
         assert_eq!(unknown, [0, 0, 0, 0]);
     }
 }

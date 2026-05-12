@@ -5,7 +5,7 @@ mod scan;
 mod vendor_ops;
 
 pub(crate) use args::parse_args;
-pub(crate) use common::{as_bool, as_f32, as_u16, as_u64};
+pub(crate) use common::{as_bool, as_f32, as_u16, as_u64, ensure_robstride_model};
 pub(crate) use common::{build_scan_feedback_hints, build_scan_model_hints, parse_hex_or_dec, parse_id_list_csv};
 pub(crate) use parse::{
     parse_damiao_mode, parse_robstride_mode, parse_transport_in_msg, parse_vendor_in_msg,

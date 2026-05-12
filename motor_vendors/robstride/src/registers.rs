@@ -1,10 +1,13 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ParameterDataType {
     Int8,
+    Int16,
+    Int32,
     UInt8,
     UInt16,
     UInt32,
     Float32,
+    String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,108 +50,44 @@ pub struct ParameterInfo {
     pub data_type: ParameterDataType,
 }
 
+pub const ROBSTRIDE_PRODUCT_INFO_COMMIT: &str = "ba7236bc26417766fda71e75ae128c66dbd21aba";
+pub const ROBSTRIDE_PRODUCT_INFO_URL: &str =
+    "https://github.com/RobStride/Product_Information/commit/ba7236bc26417766fda71e75ae128c66dbd21aba";
+
 macro_rules! param {
     ($id:expr, $name:expr, $ty:ident) => {
         ParameterInfo {
             id: $id,
             name: $name,
-            data_type: ParameterDataType::$ty,
+            data_type: $crate::registers::ParameterDataType::$ty,
         }
     };
 }
 
+#[path = "registers_00.rs"]
+pub mod registers_00;
+#[path = "registers_01.rs"]
+pub mod registers_01;
+#[path = "registers_02.rs"]
+pub mod registers_02;
+#[path = "registers_03.rs"]
+pub mod registers_03;
+#[path = "registers_04.rs"]
+pub mod registers_04;
+#[path = "registers_05.rs"]
+pub mod registers_05;
+#[path = "registers_06.rs"]
+pub mod registers_06;
+
+pub use registers_00::RS00_PARAMETER_TABLE;
+pub use registers_01::RS01_PARAMETER_TABLE;
+pub use registers_02::RS02_PARAMETER_TABLE;
+pub use registers_03::RS03_PARAMETER_TABLE;
+pub use registers_04::RS04_PARAMETER_TABLE;
+pub use registers_05::RS05_PARAMETER_TABLE;
+pub use registers_06::RS06_PARAMETER_TABLE;
+
 pub static PARAMETER_TABLE: &[ParameterInfo] = &[
-    param!(0x2000, "echoPara1", UInt16),
-    param!(0x2001, "echoPara2", UInt16),
-    param!(0x2002, "echoPara3", UInt16),
-    param!(0x2003, "echoPara4", UInt16),
-    param!(0x2004, "echoFreHz", UInt32),
-    param!(0x2005, "mechOffset", Float32),
-    param!(0x2006, "MechPos_init", Float32),
-    param!(0x2007, "limit_torque", Float32),
-    param!(0x2008, "I_FW_MAX", Float32),
-    param!(0x2009, "motor_baud", UInt8),
-    param!(0x200A, "CAN_ID", UInt8),
-    param!(0x200B, "CAN_MASTER", UInt8),
-    param!(0x200C, "CAN_TIMEOUT", UInt32),
-    param!(0x200E, "status3", UInt32),
-    param!(0x200F, "status1", Float32),
-    param!(0x2010, "status6", UInt8),
-    param!(0x2011, "cur_filt_gain", Float32),
-    param!(0x2012, "cur_kp", Float32),
-    param!(0x2013, "cur_ki", Float32),
-    param!(0x2014, "spd_kp", Float32),
-    param!(0x2015, "spd_ki", Float32),
-    param!(0x2016, "loc_kp", Float32),
-    param!(0x2017, "spd_filt_gain", Float32),
-    param!(0x2018, "limit_spd", Float32),
-    param!(0x2019, "limit_cur", Float32),
-    param!(0x201A, "loc_ref_filt_gai", Float32),
-    param!(0x201B, "limit_loc", Float32),
-    param!(0x201C, "position_offset", Float32),
-    param!(0x201D, "chasu_angle_offs", Float32),
-    param!(0x201E, "spd_step_value", Float32),
-    param!(0x201F, "vol_max", Float32),
-    param!(0x2020, "acc_set", Float32),
-    param!(0x3000, "timeUse0", UInt16),
-    param!(0x3001, "timeUse1", UInt16),
-    param!(0x3002, "timeUse2", UInt16),
-    param!(0x3003, "timeUse3", UInt16),
-    param!(0x3007, "vBus(mv)", UInt16),
-    param!(0x300A, "adc1Raw", UInt16),
-    param!(0x300B, "adc2Raw", UInt16),
-    param!(0x300C, "VBUS", Float32),
-    param!(0x300D, "cmdId", Float32),
-    param!(0x300E, "cmdIq", Float32),
-    param!(0x300F, "cmdIocref", Float32),
-    param!(0x3010, "cmdspdref", Float32),
-    param!(0x3011, "cmdTorque", Float32),
-    param!(0x3012, "cmdPos", Float32),
-    param!(0x3013, "cmdVel", Float32),
-    param!(0x3015, "modPos", Float32),
-    param!(0x3016, "mechPos_fdb", Float32),
-    param!(0x3017, "mechVel_fdb", Float32),
-    param!(0x3018, "elecPos", Float32),
-    param!(0x3019, "ia", Float32),
-    param!(0x301A, "ib", Float32),
-    param!(0x301B, "ic", Float32),
-    param!(0x301D, "phaseOrder", UInt8),
-    param!(0x301E, "iqt", Float32),
-    param!(0x3020, "iq", Float32),
-    param!(0x3021, "id", Float32),
-    param!(0x3022, "faultSta", UInt32),
-    param!(0x3023, "warnSta", UInt32),
-    param!(0x3024, "drv_fault", UInt16),
-    param!(0x3025, "drv_temp", Float32),
-    param!(0x3026, "Uq", Float32),
-    param!(0x3027, "Ud", Float32),
-    param!(0x3028, "dtc_u", Float32),
-    param!(0x3029, "dtc_v", Float32),
-    param!(0x302A, "dtc_w", Float32),
-    param!(0x302B, "v_bus", Float32),
-    param!(0x302C, "torque_fdb", Float32),
-    param!(0x302D, "rated_i", Float32),
-    param!(0x302E, "limit_i", Float32),
-    param!(0x302F, "spd_ref", Float32),
-    param!(0x3030, "spd_reff", Float32),
-    param!(0x3031, "zero_fault", UInt8),
-    param!(0x3033, "chasu_angle", Float32),
-    param!(0x3034, "as_angle", Float32),
-    param!(0x3035, "vel_max", Float32),
-    param!(0x3036, "judge", UInt8),
-    param!(0x3037, "fault1", UInt32),
-    param!(0x3038, "fault2", UInt32),
-    param!(0x3039, "fault3", UInt32),
-    param!(0x303A, "fault4", UInt32),
-    param!(0x303B, "fault5", UInt32),
-    param!(0x303C, "fault6", UInt32),
-    param!(0x303D, "fault7", UInt32),
-    param!(0x303E, "fault8", UInt32),
-    param!(0x303F, "ElecOffset", Float32),
-    param!(0x3041, "Kt_Nm/Amp", Float32),
-    param!(0x3042, "Tqcalc_Type", UInt8),
-    param!(0x3043, "low_position", Float32),
-    param!(0x3044, "H", UInt8),
     param!(0x7005, "run_mode", Int8),
     param!(0x7006, "iq_ref", Float32),
     param!(0x700A, "spd_ref", Float32),
@@ -177,4 +116,141 @@ pub static PARAMETER_TABLE: &[ParameterInfo] = &[
 
 pub fn parameter_info(id: u16) -> Option<&'static ParameterInfo> {
     PARAMETER_TABLE.iter().find(|info| info.id == id)
+}
+
+pub fn parameter_table_for_model(model: &str) -> &'static [ParameterInfo] {
+    match model.trim().to_ascii_lowercase().as_str() {
+        "rs-00" | "rs00" => RS00_PARAMETER_TABLE,
+        "rs-01" | "rs01" => RS01_PARAMETER_TABLE,
+        "rs-02" | "rs02" => RS02_PARAMETER_TABLE,
+        "rs-03" | "rs03" => RS03_PARAMETER_TABLE,
+        "rs-04" | "rs04" => RS04_PARAMETER_TABLE,
+        "rs-05" | "rs05" => RS05_PARAMETER_TABLE,
+        "rs-06" | "rs06" => RS06_PARAMETER_TABLE,
+        _ => PARAMETER_TABLE,
+    }
+}
+
+pub fn parameter_info_for_model(model: &str, id: u16) -> Option<&'static ParameterInfo> {
+    parameter_table_for_model(model)
+        .iter()
+        .find(|info| info.id == id)
+        .or_else(|| PARAMETER_TABLE.iter().find(|info| info.id == id))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rs00_uses_dedicated_manual_parameter_table() {
+        let encoder = parameter_info_for_model("rs-00", 0x3004).expect("rs00 encoderRaw");
+        assert_eq!(encoder.name, "encoderRaw");
+        assert_eq!(encoder.data_type, ParameterDataType::Int16);
+
+        let tail = parameter_info_for_model("rs00", 0x304F).expect("rs00 H");
+        assert_eq!(tail.name, "H");
+        assert_eq!(tail.data_type, ParameterDataType::UInt8);
+    }
+
+    #[test]
+    fn model_without_manual_table_keeps_only_common_control_parameters() {
+        assert!(parameter_info_for_model("rs-99", 0x3004).is_none());
+        assert_eq!(
+            parameter_info_for_model("rs-99", 0x7019)
+                .expect("common mechPos")
+                .data_type,
+            ParameterDataType::Float32
+        );
+    }
+
+    #[test]
+    fn rs01_uses_dedicated_manual_parameter_table() {
+        let protocol = parameter_info_for_model("rs-01", 0x2020).expect("rs01 protocol_1");
+        assert_eq!(protocol.name, "protocol_1");
+        assert_eq!(protocol.data_type, ParameterDataType::UInt8);
+
+        let elec = parameter_info_for_model("rs01", 0x302C).expect("rs01 ElecOffset");
+        assert_eq!(elec.name, "ElecOffset");
+        assert_eq!(elec.data_type, ParameterDataType::Float32);
+
+        let theta = parameter_info_for_model("rs-01", 0x303B).expect("rs01 theta_mech_1");
+        assert_eq!(theta.name, "theta_mech_1");
+        assert_eq!(theta.data_type, ParameterDataType::Float32);
+    }
+
+    #[test]
+    fn rs02_uses_dedicated_manual_parameter_table() {
+        let zero = parameter_info_for_model("rs-02", 0x201E).expect("rs02 zero_sta");
+        assert_eq!(zero.name, "zero_sta");
+        assert_eq!(zero.data_type, ParameterDataType::UInt8);
+
+        let angle = parameter_info_for_model("rs02", 0x3030).expect("rs02 motor_mech_angle");
+        assert_eq!(angle.name, "motor_mech_angle");
+        assert_eq!(angle.data_type, ParameterDataType::Float32);
+
+        let status = parameter_info_for_model("rs-02", 0x3048).expect("rs02 can_status");
+        assert_eq!(status.name, "can_status");
+        assert_eq!(status.data_type, ParameterDataType::UInt8);
+    }
+
+    #[test]
+    fn rs06_uses_dedicated_manual_parameter_table() {
+        let can_id = parameter_info_for_model("rs-06", 0x2009).expect("rs06 CAN_ID");
+        assert_eq!(can_id.name, "CAN_ID");
+        assert_eq!(can_id.data_type, ParameterDataType::UInt8);
+
+        let angle = parameter_info_for_model("rs06", 0x3028).expect("rs06 as_angle");
+        assert_eq!(angle.name, "as_angle");
+        assert_eq!(angle.data_type, ParameterDataType::Float32);
+
+        let end = parameter_info_for_model("rs-06", 0x3048).expect("rs06 pos_cnt1");
+        assert_eq!(end.name, "pos_cnt1");
+        assert_eq!(end.data_type, ParameterDataType::UInt16);
+    }
+
+    #[test]
+    fn rs03_uses_dedicated_manual_parameter_table() {
+        let offset = parameter_info_for_model("rs-03", 0x2024).expect("rs03 position_offset");
+        assert_eq!(offset.name, "position_offset");
+        assert_eq!(offset.data_type, ParameterDataType::UInt8);
+
+        let angle = parameter_info_for_model("rs03", 0x3027).expect("rs03 as_angle");
+        assert_eq!(angle.name, "as_angle");
+        assert_eq!(angle.data_type, ParameterDataType::Float32);
+
+        let status = parameter_info_for_model("rs-03", 0x3041).expect("rs03 can_status");
+        assert_eq!(status.name, "can_status");
+        assert_eq!(status.data_type, ParameterDataType::UInt8);
+    }
+
+    #[test]
+    fn rs04_uses_dedicated_manual_parameter_table() {
+        let pp_vel = parameter_info_for_model("rs-04", 0x201B).expect("rs04 vel_max");
+        assert_eq!(pp_vel.name, "vel_max");
+        assert_eq!(pp_vel.data_type, ParameterDataType::Float32);
+
+        let ibus = parameter_info_for_model("rs04", 0x302B).expect("rs04 ibus");
+        assert_eq!(ibus.name, "ibus");
+        assert_eq!(ibus.data_type, ParameterDataType::Float32);
+
+        let coder = parameter_info_for_model("rs-04", 0x3047).expect("rs04 coder_reg");
+        assert_eq!(coder.name, "coder_reg");
+        assert_eq!(coder.data_type, ParameterDataType::UInt16);
+    }
+
+    #[test]
+    fn rs05_uses_dedicated_manual_parameter_table() {
+        let protocol = parameter_info_for_model("rs-05", 0x2022).expect("rs05 protocol_1");
+        assert_eq!(protocol.name, "protocol_1");
+        assert_eq!(protocol.data_type, ParameterDataType::UInt8);
+
+        let cs_angle = parameter_info_for_model("rs05", 0x3035).expect("rs05 cs_angle");
+        assert_eq!(cs_angle.name, "cs_angle");
+        assert_eq!(cs_angle.data_type, ParameterDataType::Float32);
+
+        let h = parameter_info_for_model("rs-05", 0x304E).expect("rs05 H");
+        assert_eq!(h.name, "H");
+        assert_eq!(h.data_type, ParameterDataType::UInt8);
+    }
 }

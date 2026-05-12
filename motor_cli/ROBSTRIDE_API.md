@@ -19,11 +19,17 @@ Practical and complete reference for RobStride control, parameter access, and cu
 | Parameter | Meaning | Typical value |
 |---|---|---|
 | `channel` | CAN interface name | `can0` |
-| `model` | RobStride model string | `rs-00`, `rs-06` |
+| `model` | RobStride model string; must match the physical motor | `rs-00` ... `rs-06` |
 | `motor-id` | Device ID | e.g. `127` |
 | `feedback-id` | Host/feedback ID used in command frame | usually `0xFD` |
 | `loop` | Send cycles for periodic control | `20`~`100` |
 | `dt-ms` | Send interval per cycle | `20`~`50` |
+
+Supported RobStride model strings are `rs-00`, `rs-01`, `rs-02`, `rs-03`, `rs-04`, `rs-05`, and `rs-06`.
+
+The high-level control shape is intentionally the same across these models, but native function-code parameters are not one shared table. `read-param` and `write-param` select the parameter name/type table from `--model`, then encode or decode the payload accordingly. Do not use `rs-00` as a generic placeholder when operating an RS03/RS04/RS05/RS06 motor.
+
+The built-in RS00-RS06 parameter tables are aligned with RobStride/Product_Information commit `ba7236bc26417766fda71e75ae128c66dbd21aba`.
 
 ## 2) `motor_cli` RobStride Modes
 
@@ -171,6 +177,10 @@ Raw protocol alignment (with official upper software):
 | `0x701C` | `VBUS` | `f32` | bus voltage |
 
 ## 5) Parameter Read/Write
+
+Parameter access is model-aware. For common runtime control parameters in the `0x7000` range, the same IDs are used by the unified control paths. For manual function-code parameters from the RobStride manuals, especially the `0x2000` and `0x3000` ranges, each RS model may define different names, data types, or valid ranges at the same ID.
+
+If the selected `--model` does not contain a manual-table parameter ID, CLI writes are rejected and reads fall back to raw handling only where the protocol path allows it.
 
 Read parameter:
 

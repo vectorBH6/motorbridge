@@ -58,7 +58,7 @@ WS API 主链路已实现。
 | 厂商 | `mit` | `pos_vel` | `vel` | `force_pos` | 参数差异 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
 | damiao | 原生 MIT | 原生 POS_VEL | 原生 VEL | 原生 FORCE_POS | 参数完整对齐 | 基线参考实现 |
-| robstride | 原生 MIT | 映射到原生 Position（`run_mode=1` + `limit_spd` + `loc_ref`） | 原生 Velocity 模式 | 不支持 | `vel` 映射到 vendor velocity target；`pos_vel` 映射到 vendor Position | 参数读写走 `robstride_*` |
+| robstride | 原生 MIT | 映射到原生 Position（`run_mode=1` + `limit_spd` + `loc_ref`） | 原生 Velocity 模式 | 不支持 | `vel` 映射到 vendor velocity target；`pos_vel` 映射到 vendor Position | 参数读写走 `robstride_*`；`model` 必须是具体 `rs-00`..`rs-06` 型号 |
 | hexfellow | 原生 MIT | 原生 POS_VEL | 不支持 | 不支持 | `mit` 支持 `kp/kd/tau`，无独立 `vel` | CAN-FD 链路 |
 | myactuator | 不支持 | Position 设定流程 | 原生速度设定 | 不支持 | `pos_vel` 通过 position setpoint 实现；基线里 `vel` 可用 | 强项是 current/position/version/mode-query |
 | hightorque | 原生 MIT（ht_can 映射） | 映射到原生 pos+vel+tqe | 原生速度帧 | 映射到原生 pos+vel+tqe | `mit/vel` 为原生帧映射；`kp/kd` 保留但协议侧忽略；`pos_vel/force_pos` 映射到 pos+vel+tqe | 当前子集 scan/read/mit/vel/pos-vel/force-pos/stop；`enable/disable` 接受但为 no-op |
@@ -176,6 +176,10 @@ cargo run -p motor_cli --release -- --vendor damiao --channel can0@1000000 --mod
 
 ## 入站命令示例
 
+RobStride 的 JSON 字段名保持不变，但 `model` 必须填写真实电机型号（`rs-00` 到 `rs-06`）。不同型号的手册参数表不一样，所以真实交互时会拒绝 `auto`、空型号和泛用 RobStride 名称。
+
+网关进程仍然可以用其他厂商的通用默认值启动；RobStride 校验发生在选择 RobStride target、扫描或连接时。
+
 ```json
 {"op":"ping"}
 {"op":"enable"}
@@ -204,7 +208,7 @@ cargo run -p motor_cli --release -- --vendor damiao --channel can0@1000000 --mod
 {"op":"shutdown"}
 {"op":"close_bus"}
 {"op":"scan","start_id":1,"end_id":16,"feedback_base":16,"timeout_ms":100}
-{"op":"scan","vendor":"robstride","start_id":120,"end_id":135,"feedback_ids":"0xFF,0xFE,0x00","timeout_ms":120}
+{"op":"scan","vendor":"robstride","model":"rs-06","start_id":120,"end_id":135,"feedback_ids":"0xFF,0xFE,0x00","timeout_ms":120}
 {"op":"set_id","vendor":"damiao","old_motor_id":2,"old_feedback_id":18,"new_motor_id":5,"new_feedback_id":21,"store":true,"verify":true}
 {"op":"set_id","vendor":"robstride","old_motor_id":127,"new_motor_id":126,"feedback_id":255,"verify":true}
 {"op":"verify","motor_id":5,"feedback_id":21,"timeout_ms":1000}

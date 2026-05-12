@@ -10,14 +10,33 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::time::Duration;
 
-fn parse_robstride_param_value(param_id: u16, raw: &str) -> Result<ParameterValue, String> {
-    let info = motor_vendor_robstride::parameter_info(param_id)
-        .ok_or_else(|| format!("unknown RobStride parameter 0x{param_id:04X}"))?;
+fn parse_robstride_param_value(
+    model: &str,
+    param_id: u16,
+    raw: &str,
+) -> Result<ParameterValue, String> {
+    let info = motor_vendor_robstride::parameter_info_for_model(model, param_id)
+        .ok_or_else(|| format!("unknown RobStride parameter 0x{param_id:04X} for model {model}"))?;
     match info.data_type {
         ParameterDataType::Int8 => raw
             .parse::<i8>()
             .map(ParameterValue::I8)
             .map_err(|e| format!("invalid --param-value: {e}")),
+        ParameterDataType::Int16 => raw
+            .parse::<i16>()
+            .map(ParameterValue::I16)
+            .map_err(|e| format!("invalid --param-value: {e}")),
+        ParameterDataType::Int32 => {
+            if let Some(hex) = raw.strip_prefix("0x") {
+                i32::from_str_radix(hex, 16)
+                    .map(ParameterValue::I32)
+                    .map_err(|e| format!("invalid --param-value: {e}"))
+            } else {
+                raw.parse::<i32>()
+                    .map(ParameterValue::I32)
+                    .map_err(|e| format!("invalid --param-value: {e}"))
+            }
+        }
         ParameterDataType::UInt8 => raw
             .parse::<u8>()
             .map(ParameterValue::U8)
@@ -40,19 +59,28 @@ fn parse_robstride_param_value(param_id: u16, raw: &str) -> Result<ParameterValu
             .parse::<f32>()
             .map(ParameterValue::F32)
             .map_err(|e| format!("invalid --param-value: {e}")),
+        ParameterDataType::String => Err(format!(
+            "RobStride string parameter 0x{param_id:04X} write is not supported by this CLI"
+        )),
     }
 }
 
-fn print_robstride_param_value(param_id: u16, value: ParameterValue) {
-    let name = motor_vendor_robstride::parameter_info(param_id)
+fn print_robstride_param_value(model: &str, param_id: u16, value: ParameterValue) {
+    let name = motor_vendor_robstride::parameter_info_for_model(model, param_id)
         .map(|info| info.name)
         .unwrap_or("unknown");
     match value {
         ParameterValue::I8(v) => println!("param 0x{param_id:04X} ({name}) = {v}"),
+        ParameterValue::I16(v) => println!("param 0x{param_id:04X} ({name}) = {v}"),
+        ParameterValue::I32(v) => println!("param 0x{param_id:04X} ({name}) = {v}"),
         ParameterValue::U8(v) => println!("param 0x{param_id:04X} ({name}) = {v}"),
         ParameterValue::U16(v) => println!("param 0x{param_id:04X} ({name}) = {v}"),
         ParameterValue::U32(v) => println!("param 0x{param_id:04X} ({name}) = {v}"),
         ParameterValue::F32(v) => println!("param 0x{param_id:04X} ({name}) = {v:.6}"),
+        ParameterValue::String4(v) => println!(
+            "param 0x{param_id:04X} ({name}) raw-string-chunk = {:02x?}",
+            v
+        ),
     }
 }
 
@@ -414,7 +442,7 @@ pub fn run_robstride(
         "read-param" => {
             let param_id = get_u16_hex_or_dec(args, "param-id", 0)?;
             let value = motor.get_parameter(param_id, Duration::from_millis(500))?;
-            print_robstride_param_value(param_id, value);
+            print_robstride_param_value(model, param_id, value);
             controller.close_bus()?;
             return Ok(());
         }
@@ -423,11 +451,11 @@ pub fn run_robstride(
             let raw = args
                 .get("param-value")
                 .ok_or_else(|| "missing --param-value".to_string())?;
-            let value = parse_robstride_param_value(param_id, raw)?;
+            let value = parse_robstride_param_value(model, param_id, raw)?;
             motor.write_parameter(param_id, value)?;
             std::thread::sleep(Duration::from_millis(50));
             let verify = motor.get_parameter(param_id, Duration::from_millis(500))?;
-            print_robstride_param_value(param_id, verify);
+            print_robstride_param_value(model, param_id, verify);
             controller.close_bus()?;
             return Ok(());
         }
@@ -566,11 +594,11 @@ pub fn run_robstride(
                     }
                     let zero_sta = motor.get_parameter(0x7029, Duration::from_millis(200)).ok();
                     if let Some(v) = zero_sta {
-                        print_robstride_param_value(0x7029, v);
+                        print_robstride_param_value(model, 0x7029, v);
                     }
                     let post_mech = motor.get_parameter(0x7019, Duration::from_millis(200)).ok();
                     if let Some(v) = post_mech {
-                        print_robstride_param_value(0x7019, v);
+                        print_robstride_param_value(model, 0x7019, v);
                     }
                     let pre_mech_f32 = match pre_mech {
                         Some(ParameterValue::F32(v)) => Some(v),
@@ -696,9 +724,9 @@ mod tests {
 
     #[test]
     fn parse_robstride_param_value_uses_parameter_type() {
-        let mode = parse_robstride_param_value(0x7005, "2").expect("int8 mode");
-        let timeout = parse_robstride_param_value(0x7028, "123").expect("u32 timeout");
-        let mech = parse_robstride_param_value(0x7019, "1.5").expect("f32 mech pos");
+        let mode = parse_robstride_param_value("rs-00", 0x7005, "2").expect("int8 mode");
+        let timeout = parse_robstride_param_value("rs-00", 0x7028, "123").expect("u32 timeout");
+        let mech = parse_robstride_param_value("rs-00", 0x7019, "1.5").expect("f32 mech pos");
 
         match mode {
             ParameterValue::I8(v) => assert_eq!(v, 2),
