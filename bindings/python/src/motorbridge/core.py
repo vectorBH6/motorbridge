@@ -241,6 +241,17 @@ class Motor:
         )
         return float(out.value)
 
+    def robstride_get_fault_report(self) -> tuple[int, int]:
+        fault_raw = c_uint32(0)
+        warning_raw = c_uint32(0)
+        _ok(
+            self._abi.lib.motor_handle_robstride_get_fault_report(
+                self._ptr, ctypes.byref(fault_raw), ctypes.byref(warning_raw)
+            ),
+            "robstride_get_fault_report",
+        )
+        return int(fault_raw.value), int(warning_raw.value)
+
     def robstride_set_device_id(self, new_device_id: int) -> None:
         if not 1 <= int(new_device_id) <= 255:
             raise ValueError(f"RobStride new_device_id must be in 1..255, got {new_device_id}")

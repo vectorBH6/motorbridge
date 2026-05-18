@@ -382,7 +382,12 @@ impl RobstrideMotor {
             [1, 0, 0, 0, 0, 0, 0, 0],
             8,
             Duration::from_millis(240),
-        )
+        )?;
+        self.fault_report
+            .lock()
+            .map_err(|_| MotorError::Io("fault report lock poisoned".to_string()))?
+            .take();
+        Ok(())
     }
 
     pub fn set_active_report(&self, enabled: bool) -> Result<()> {
@@ -574,7 +579,7 @@ impl RobstrideMotor {
                 ps.values.insert(param_id, value);
                 Ok(())
             }
-            CommunicationType::OPERATION_STATUS | CommunicationType::FAULT_REPORT => {
+            CommunicationType::OPERATION_STATUS => {
                 let status = decode_status_frame(
                     extra_data,
                     frame.data,
@@ -599,13 +604,16 @@ impl RobstrideMotor {
                         overcurrent: status.flags.overcurrent,
                         undervoltage: status.flags.undervoltage,
                     });
-                if comm_type == CommunicationType::FAULT_REPORT {
-                    self.fault_report
-                        .lock()
-                        .map_err(|_| MotorError::Io("fault report lock poisoned".to_string()))?
-                        .replace(decode_fault_report(frame.data));
-                }
                 self.status_seq.fetch_add(1, Ordering::Release);
+                Ok(())
+            }
+            CommunicationType::FAULT_REPORT => {
+                self.fault_report
+                    .lock()
+                    .map_err(|_| MotorError::Io("fault report lock poisoned".to_string()))?
+                    .replace(decode_fault_report(frame.data));
+                // Fault reports are real device responses, but their payload is not a
+                // position/velocity status payload or a control ACK.
                 Ok(())
             }
             _ => Ok(()),
@@ -714,5 +722,47 @@ mod tests {
             is_rx: true,
         };
         assert!(!motor.accepts_frame(&frame));
+    }
+
+    #[test]
+    fn fault_report_does_not_overwrite_latest_state() {
+        let bus: Arc<dyn CanBus> = Arc::new(MockBus::new());
+        let motor = RobstrideMotor::new(2, 0xFD, "rs-00", bus).expect("create motor");
+
+        motor
+            .process_feedback_frame(CanFrame {
+                arbitration_id: build_ext_id(CommunicationType::OPERATION_STATUS, 0x0002, 0xFD),
+                data: [0x90, 0x00, 0x80, 0x00, 0x7F, 0xFF, 0x05, 0x78],
+                dlc: 8,
+                is_extended: true,
+                is_rx: true,
+            })
+            .expect("status frame");
+        let before = motor.latest_state().expect("state from status");
+        let seq_before = motor.status_seq.load(Ordering::Acquire);
+
+        motor
+            .process_feedback_frame(CanFrame {
+                arbitration_id: build_ext_id(CommunicationType::FAULT_REPORT, 0x0002, 0xFD),
+                data: [0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00],
+                dlc: 8,
+                is_extended: true,
+                is_rx: true,
+            })
+            .expect("fault frame");
+
+        let after = motor.latest_state().expect("state should remain");
+        let seq_after = motor.status_seq.load(Ordering::Acquire);
+        assert_eq!(after.arbitration_id, before.arbitration_id);
+        assert_eq!(after.position, before.position);
+        assert_eq!(after.velocity, before.velocity);
+        assert_eq!(after.torque, before.torque);
+        assert_eq!(after.temperature_c, before.temperature_c);
+        assert_eq!(seq_after, seq_before);
+
+        let fault = motor.latest_fault_report().expect("fault report");
+        assert_eq!(fault.fault_raw, 0);
+        assert_eq!(fault.warning_raw, 1);
+        assert!(fault.warnings.overtemperature_warning);
     }
 }

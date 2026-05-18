@@ -222,6 +222,36 @@ pub extern "C" fn motor_handle_robstride_get_param_f32_host_id(
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn motor_handle_robstride_get_fault_report(
+    motor: *mut MotorHandle,
+    out_fault_raw: *mut u32,
+    out_warning_raw: *mut u32,
+) -> i32 {
+    if motor.is_null() || out_fault_raw.is_null() || out_warning_raw.is_null() {
+        set_last_error("motor or output pointer is null");
+        return -1;
+    }
+    let motor = unsafe { &mut *motor };
+    match &motor.inner {
+        MotorHandleInner::Robstride(m) => {
+            let report = m.latest_fault_report();
+            unsafe {
+                *out_fault_raw = report.map(|r| r.fault_raw).unwrap_or(0);
+                *out_warning_raw = report.map(|r| r.warning_raw).unwrap_or(0);
+            }
+            0
+        }
+        MotorHandleInner::Damiao(_)
+        | MotorHandleInner::Hexfellow(_)
+        | MotorHandleInner::MyActuator(_)
+        | MotorHandleInner::Hightorque(_) => {
+            set_last_error("robstride_get_fault_report requires a RobStride motor");
+            -1
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn motor_handle_robstride_set_device_id(
     motor: *mut MotorHandle,
     new_device_id: u8,

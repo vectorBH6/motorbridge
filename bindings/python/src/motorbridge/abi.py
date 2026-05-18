@@ -162,6 +162,8 @@ class Abi:
             c_void_p, c_uint16, c_uint16, c_uint32, POINTER(c_float)
         ]
         lib.motor_handle_robstride_get_param_f32_host_id.restype = c_int32
+        lib.motor_handle_robstride_get_fault_report.argtypes = [c_void_p, POINTER(c_uint32), POINTER(c_uint32)]
+        lib.motor_handle_robstride_get_fault_report.restype = c_int32
         lib.motor_handle_robstride_set_device_id.argtypes = [c_void_p, c_uint8]
         lib.motor_handle_robstride_set_device_id.restype = c_int32
         lib.motor_handle_robstride_set_active_report.argtypes = [c_void_p, c_uint8]

@@ -82,6 +82,7 @@ int32_t motor_handle_get_register_u32(MotorHandle* motor, uint8_t rid, uint32_t 
 int32_t motor_handle_robstride_ping(MotorHandle* motor, uint8_t* out_device_id, uint8_t* out_responder_id);
 int32_t motor_handle_robstride_ping_host_id(MotorHandle* motor, uint16_t host_id, uint32_t timeout_ms, uint8_t* out_device_id, uint8_t* out_responder_id);
 int32_t motor_handle_robstride_get_param_f32_host_id(MotorHandle* motor, uint16_t param_id, uint16_t host_id, uint32_t timeout_ms, float* out_value);
+int32_t motor_handle_robstride_get_fault_report(MotorHandle* motor, uint32_t* out_fault_raw, uint32_t* out_warning_raw);
 int32_t motor_handle_robstride_set_device_id(MotorHandle* motor, uint8_t new_device_id);
 int32_t motor_handle_robstride_set_active_report(MotorHandle* motor, uint8_t enabled);
 int32_t motor_handle_robstride_write_param_i8(MotorHandle* motor, uint16_t param_id, int8_t value);

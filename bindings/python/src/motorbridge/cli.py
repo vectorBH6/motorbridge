@@ -656,6 +656,10 @@ def _run_command(args: argparse.Namespace) -> None:
                             f"#{i} pos={st.pos:+.3f} vel={st.vel:+.3f} "
                             f"torq={st.torq:+.3f} status={st.status_code}"
                         )
+                        if args.vendor == "robstride":
+                            fault_raw, warning_raw = motor.robstride_get_fault_report()
+                            if fault_raw or warning_raw:
+                                print(f"    fault_raw=0x{fault_raw:08X} warning_raw=0x{warning_raw:08X}")
                 time.sleep(max(args.dt_ms, 0) / 1000.0)
         finally:
             motor.close()
