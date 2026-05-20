@@ -101,6 +101,10 @@ motorbridge/
 - 导出 C 兼容句柄与函数
 - Rust 错误转换为返回码 + `motor_last_error_message()`
 - 供 C/C++/Python 等语言集成
+- 同一个 `MotorController` 或 `MotorHandle` 上的调用会在 ABI 内部串行化；
+  不同 handle 仍可在不同线程使用
+- `motor_controller_free` / `motor_handle_free` 是独占所有权操作：
+  不要与同一指针上的其它操作并发调用，释放后也不能继续使用该指针
 
 ### 4) SDK 与示例
 

@@ -15,13 +15,22 @@
 - `motorbridge-studio`：https://github.com/tianrking/motorbridge-studio
   基于 `ws_gateway` 的独立 Web 控制台。
 
-## 更新说明（2026-05）：v0.3.4
+## 更新说明（2026-05）：v0.3.5
 
-- `v0.3.4` 修复 RobStride 参数保存 ACK 兼容性，适配
-  `SAVE_PARAMETERS` 后返回非 status 但有效设备回复的固件。
-- Damiao `ensure_mode` 在 `dm-serial` 等时序敏感链路上更稳。
-- `ws_gateway` 的 Damiao `set_id` 现在会正确遵守 `dm-serial` transport。
-- 严格 Clippy 已清理通过，并新增 WS 协议与 RobStride 手测文档。
+- `v0.3.5` 保持 Python binding 公开 API 兼容，同时增强 Rust ABI：
+  同一 handle 的 FFI 调用会被串行化，已关闭的 Python motor handle 会抛
+  `CallError`，未绑定 motor 的 controller 操作会返回明确错误。
+- `CoreController` 在 `Drop` 时会停止后台 polling 线程，即使用户忘记调用
+  `shutdown()` / `close_bus()` 也不会泄漏接收线程。
+- Python CLI 从单文件拆为 `motorbridge.cli` 包，但继续兼容
+  `motorbridge-cli`、`python -m motorbridge.cli`、`python -m motorbridge`
+  以及旧式扁平 run 参数。
+- RobStride Python scan 现在按每个 host/feedback 候选复用 controller，
+  不再为每个 `(motor_id, feedback_id)` 反复打开 CAN socket；RobStride
+  MIT 已有测试锁定 `pos/vel/kp/kd/tau` 的真实编码。
+- `open_can_bus()` 是明确的跨平台 classic-CAN 入口；`open_socketcan()`
+  继续作为兼容别名保留。
+- CI 现在强制执行 `fmt`、`clippy -D warnings` 和 workspace tests。
 
 ## 传输链路标识
 
@@ -116,7 +125,7 @@ flowchart LR
 ```mermaid
 flowchart TB
   PYAPP["Python 应用"] --> CTL["Controller(...) / from_dm_serial(...) / from_socketcanfd(...)"]
-  CTL --> ADD["add_damiao / add_robstride / add_myactuator / add_hightorque / add_hexfellow"]
+  CTL --> ADD["add_damiao_motor / add_robstride_motor / add_myactuator_motor / add_hightorque_motor / add_hexfellow_motor"]
   ADD --> MOTOR["MotorHandle"]
   MOTOR --> CTRL1["send_mit / send_pos_vel / send_vel / send_force_pos"]
   MOTOR --> CTRL2["ensure_mode / enable / disable / set_zero / stop / clear_error"]

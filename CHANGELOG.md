@@ -7,6 +7,46 @@ Versioning.
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-05-20
+
+### Added
+
+- Added `CoreController` drop-time polling cleanup so background receive
+  workers stop even when callers forget to call `shutdown()` or `close_bus()`.
+- Added RobStride MIT encoding regression tests proving all five unified MIT
+  inputs (`pos`, `vel`, `kp`, `kd`, `tau`) are encoded into the native control
+  frame.
+- Added workspace lint inheritance for all Rust crates while keeping the active
+  lint set aligned with strict CI.
+
+### Fixed
+
+- Hardened C ABI controller and motor handles with per-handle locking, removing
+  same-handle concurrent-call undefined behavior while preserving the public ABI
+  function names and signatures.
+- Fixed Python binding closed-handle guards so motor methods consistently raise
+  `CallError` instead of passing null pointers into the ABI.
+- Fixed unbound controller operations to return a clear error instead of
+  silently succeeding before any motor is added.
+- Fixed Python RobStride scan efficiency by opening one controller per
+  `feedback_id` candidate instead of reopening the CAN socket for every
+  `(motor_id, feedback_id)` probe.
+- Fixed Damiao register type error messages so `write_register_f32()` reports
+  `expects float` and `write_register_u32()` reports `expects uint32`.
+- Fixed CI compatibility with newer Clippy for the WebSocket handshake callback.
+
+### Changed
+
+- Split the Python CLI implementation from one large `cli.py` file into the
+  `motorbridge.cli` package while preserving public entrypoints:
+  `motorbridge.cli:main`, `python -m motorbridge.cli`, `python -m motorbridge`,
+  and legacy flat run arguments.
+- Clarified `open_can_bus()` as the cross-platform classic-CAN backend selector;
+  `open_socketcan()` remains available as a compatibility alias.
+- Python package version advanced to `0.3.5`.
+- Rust workspace package version advanced to `0.3.5` for release/tag alignment.
+- C++ package metadata advanced to `0.3.5`.
+
 ## [0.3.4] - 2026-05-20
 
 ### Added

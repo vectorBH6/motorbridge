@@ -62,19 +62,19 @@ $env:PYTHONPATH="bindings/python/src"; python -m motorbridge.cli --help
 Rust/Core CLI:
 
 ```bash
-cargo run -p motor_cli -- --vendor robstride --channel can0 --model rs-00 --mode scan --start-id 1 --end-id 127 --feedback-ids 0xFD 0xFF 0xFE 0x00 0xAA
+cargo run -p motor_cli -- --vendor robstride --channel can0 --model rs-00 --mode scan --start-id 1 --end-id 127 --feedback-ids 0xFD,0xFF,0xFE,0x00,0xAA
 ```
 
 Python CLI:
 
 ```bash
-motorbridge-cli scan --vendor robstride --channel can0 --model rs-00 --start-id 1 --end-id 127 --feedback-ids 0xFD 0xFF 0xFE 0x00 0xAA
+motorbridge-cli scan --vendor robstride --channel can0 --model rs-00 --start-id 1 --end-id 127 --feedback-ids 0xFD,0xFF,0xFE,0x00,0xAA
 ```
 
 Python CLI from source tree:
 
 ```bash
-PYTHONPATH=bindings/python/src python -m motorbridge.cli scan --vendor robstride --channel can0 --model rs-00 --start-id 1 --end-id 127 --feedback-ids 0xFD 0xFF 0xFE 0x00 0xAA
+PYTHONPATH=bindings/python/src python -m motorbridge.cli scan --vendor robstride --channel can0 --model rs-00 --start-id 1 --end-id 127 --feedback-ids 0xFD,0xFF,0xFE,0x00,0xAA
 ```
 
 Expected: at least one `vendor=robstride` hit for the real device ID.

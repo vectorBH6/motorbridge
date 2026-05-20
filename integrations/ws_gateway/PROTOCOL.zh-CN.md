@@ -1132,7 +1132,7 @@ RobStride 参数：
 
 | 字段 | 类型 | 默认值 | 作用 |
 | --- | --- | --- | --- |
-| `feedback_ids` | string/array | 当前 feedback + 常见 host_id | host_id 候选列表 |
+| `feedback_ids` | string/array | `0xFD,0xFF,0xFE` + 当前 `feedback_id` | host_id 候选列表；请求中传入的列表会追加并去重 |
 | `param_id` | u16/string | `0x7019` | ping 失败时尝试读的参数 |
 
 Hexfellow：
@@ -1245,8 +1245,6 @@ RobStride 请求：
 
 ```json
 {"vendor":"robstride","transport":"socketcan","old_motor_id":127,"new_motor_id":126,"feedback_id":253,"verify":{"vendor":"robstride","motor_id":126,"ok":true}}
-```
-
 ## 16. capabilities
 
 推荐客户端连接后先发：
@@ -1265,7 +1263,7 @@ RobStride 请求：
   "default_vendor":"damiao",
   "vendors":{
     "damiao":{"transports":["auto","socketcan","socketcanfd","dm-serial"],"modes":["mit","pos_vel","vel","force_pos"]},
-    "robstride":{"transports":["auto","socketcan","socketcanfd"],"modes":["mit","vel"]}
+    "robstride":{"transports":["auto","socketcan","socketcanfd"],"modes":["mit","pos_vel","vel"]}
   }
 }
 ```

@@ -101,6 +101,11 @@ Each vendor crate implements:
 - exports C-compatible handles and functions
 - wraps Rust errors into integer return code + `motor_last_error_message()`
 - enables C/C++/Python/etc integration
+- serializes calls that use the same `MotorController` or `MotorHandle`
+  internally; different handles may still be used from different threads
+- `motor_controller_free` / `motor_handle_free` are exclusive ownership
+  operations: do not call them concurrently with other operations on the same
+  pointer, and do not use a pointer after free
 
 ### 4) SDK/Examples
 

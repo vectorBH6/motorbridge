@@ -15,15 +15,23 @@ Unified CAN motor control stack with a vendor-agnostic Rust core, stable C ABI, 
 - `motorbridge-studio`: https://github.com/tianrking/motorbridge-studio
   Standalone web control UI built on top of `ws_gateway`.
 
-## Update (2026-05): v0.3.4
+## Update (2026-05): v0.3.5
 
-- `v0.3.4` fixes RobStride parameter-save acknowledgement handling for
-  firmware that replies to `SAVE_PARAMETERS` with a valid non-status device
-  response.
-- Damiao `ensure_mode` is more robust on timing-sensitive links such as
-  `dm-serial`.
-- `ws_gateway` now honors Damiao `dm-serial` transport during `set_id`.
-- Strict Clippy is clean, and WS/RobStride manual protocol/test docs were added.
+- `v0.3.5` keeps the Python binding API stable while hardening the Rust ABI:
+  same-handle FFI calls are serialized, closed Python motor handles raise
+  `CallError`, and unbound controller operations now report a real error.
+- `CoreController` now stops the background polling worker on `Drop`, so users
+  do not leak a receive thread when they forget to call `shutdown()` or
+  `close_bus()`.
+- Python CLI was split into a maintainable `motorbridge.cli` package without
+  removing the existing `motorbridge-cli`, `python -m motorbridge.cli`, or
+  legacy flat run entrypoints.
+- RobStride scan in Python now reuses one controller per host/feedback
+  candidate instead of reopening the CAN socket for every probe; RobStride MIT
+  tests now lock down `pos/vel/kp/kd/tau` encoding.
+- `open_can_bus()` is the explicit cross-platform classic-CAN selector;
+  `open_socketcan()` remains as a compatibility alias.
+- CI now enforces `fmt`, `clippy -D warnings`, and workspace tests.
 
 ## Transport Legend
 
@@ -119,7 +127,7 @@ flowchart LR
 ```mermaid
 flowchart TB
   PYAPP["Python App"] --> CTL["Controller(...) / from_dm_serial(...) / from_socketcanfd(...)"]
-  CTL --> ADD["add_damiao / add_robstride / add_myactuator / add_hightorque / add_hexfellow"]
+  CTL --> ADD["add_damiao_motor / add_robstride_motor / add_myactuator_motor / add_hightorque_motor / add_hexfellow_motor"]
   ADD --> MOTOR["MotorHandle"]
   MOTOR --> CTRL1["send_mit / send_pos_vel / send_vel / send_force_pos"]
   MOTOR --> CTRL2["ensure_mode / enable / disable / set_zero / stop / clear_error"]

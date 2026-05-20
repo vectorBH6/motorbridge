@@ -84,7 +84,11 @@ Damiao register APIs:
 RobStride extensions:
 
 - `motor_handle_robstride_ping`
+- `motor_handle_robstride_ping_host_id`
 - `motor_handle_robstride_set_device_id`
+- `motor_handle_robstride_set_active_report`
+- `motor_handle_robstride_get_fault_report`
+- `motor_handle_robstride_get_param_f32_host_id`
 - `motor_handle_robstride_write_param_i8/u8/u16/u32/f32`
 - `motor_handle_robstride_get_param_i8/u8/u16/u32/f32`
 
@@ -92,12 +96,14 @@ RobStride extensions:
 
 1. Transport constructor:
    - `motor_controller_new_socketcan(channel)` (general path)
+   - `motor_controller_new_socketcanfd(channel)` (CAN-FD path; required by Hexfellow)
    - `motor_controller_new_dm_serial(serial_port, baud)` (Damiao-only serial bridge; cross-platform, e.g. `/dev/ttyACM0` or `COM3`)
 2. `motor_controller_add_<vendor>_motor`
 3. optional: `motor_controller_enable_all`
 4. optional: `motor_handle_ensure_mode`
 5. send control commands / read state / vendor-specific operations
 6. `motor_controller_shutdown`
+   - or `motor_controller_close_bus` when only closing the local session/bus
 7. `motor_handle_free`
 8. `motor_controller_free`
 

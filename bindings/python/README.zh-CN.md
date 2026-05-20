@@ -41,10 +41,13 @@
 
 ## 范围
 
-- 当前目标包版本：`0.3.4`。
-- `0.3.4` 修复 RobStride 参数保存 ACK 兼容性，增强 Damiao
-  `ensure_mode` 在时序敏感链路上的可靠性，修复 `ws_gateway` 中 Damiao
-  `dm-serial` 改 ID 走错传输的问题，并补充 WS/RobStride 手测文档。
+- 当前目标包版本：`0.3.5`。
+- `0.3.5` 保持 Python binding 公开 API 兼容，同时增强 ABI 锁保护、
+  已关闭 handle 检查、CoreController polling 生命周期、Python RobStride
+  scan 性能，以及 CLI/文档对齐。
+- Python CLI 现在实现为 `motorbridge.cli` 包，但 `motorbridge-cli`、
+  `python -m motorbridge.cli`、`python -m motorbridge`、
+  `from motorbridge.cli import main` 和旧式扁平 run 参数继续可用。
 - 高层 API: `Controller`、`Motor`、`Mode`
 - CLI: `motorbridge-cli`
 - 网关启动命令（pip 安装后进入 PATH）：

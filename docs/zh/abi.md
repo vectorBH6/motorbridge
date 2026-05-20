@@ -85,7 +85,11 @@ Damiao 寄存器接口：
 RobStride 扩展接口：
 
 - `motor_handle_robstride_ping`
+- `motor_handle_robstride_ping_host_id`
 - `motor_handle_robstride_set_device_id`
+- `motor_handle_robstride_set_active_report`
+- `motor_handle_robstride_get_fault_report`
+- `motor_handle_robstride_get_param_f32_host_id`
 - `motor_handle_robstride_write_param_i8/u8/u16/u32/f32`
 - `motor_handle_robstride_get_param_i8/u8/u16/u32/f32`
 
@@ -93,12 +97,14 @@ RobStride 扩展接口：
 
 1. 选择传输层构造器：
    - `motor_controller_new_socketcan(channel)`（通用路径）
+   - `motor_controller_new_socketcanfd(channel)`（CAN-FD 路径；Hexfellow 必须使用）
    - `motor_controller_new_dm_serial(serial_port, baud)`（仅 Damiao 串口桥；跨平台，可用 `/dev/ttyACM0` 或 `COM3`）
 2. `motor_controller_add_<vendor>_motor`
 3. 可选：`motor_controller_enable_all`
 4. 可选：`motor_handle_ensure_mode`
 5. 发送控制命令 / 读取状态 / 调用厂商扩展接口
 6. `motor_controller_shutdown`
+   - 或在只关闭本地会话/总线时调用 `motor_controller_close_bus`
 7. `motor_handle_free`
 8. `motor_controller_free`
 

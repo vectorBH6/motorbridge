@@ -207,7 +207,7 @@ cargo run -p motor_cli --release -- --vendor damiao --channel can0@1000000 --mod
 {"op":"shutdown"}
 {"op":"close_bus"}
 {"op":"scan","start_id":1,"end_id":16,"feedback_base":16,"timeout_ms":100}
-{"op":"scan","vendor":"robstride","start_id":120,"end_id":135,"feedback_ids":"0xFF,0xFE,0x00","timeout_ms":120}
+{"op":"scan","vendor":"robstride","start_id":120,"end_id":135,"feedback_ids":"0xFD,0xFF,0xFE,0x00,0xAA","timeout_ms":120}
 {"op":"set_id","vendor":"damiao","old_motor_id":2,"old_feedback_id":18,"new_motor_id":5,"new_feedback_id":21,"store":true,"verify":true}
 {"op":"set_id","vendor":"robstride","old_motor_id":127,"new_motor_id":126,"feedback_id":255,"verify":true}
 {"op":"verify","motor_id":5,"feedback_id":21,"timeout_ms":1000}
