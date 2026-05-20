@@ -381,7 +381,7 @@ impl DamiaoMotor {
         }
         if info.data_type != RegisterDataType::Float {
             return Err(MotorError::InvalidArgument(format!(
-                "register {rid} expects uint32"
+                "register {rid} expects float"
             )));
         }
         self.send_raw(
@@ -400,7 +400,7 @@ impl DamiaoMotor {
         }
         if info.data_type != RegisterDataType::UInt32 {
             return Err(MotorError::InvalidArgument(format!(
-                "register {rid} expects float"
+                "register {rid} expects uint32"
             )));
         }
         self.send_raw(
@@ -718,5 +718,27 @@ mod tests {
             f.arbitration_id == 0x04 && f.data == [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE]
         });
         assert!(has_set_zero, "set_zero command frame should be sent");
+    }
+
+    #[test]
+    fn register_type_errors_name_expected_type() {
+        let bus: Arc<dyn CanBus> = Arc::new(MockBus::new());
+        let motor = DamiaoMotor::new(0x01, 0x11, "4340P", bus).expect("create motor");
+
+        let f32_err = motor
+            .write_register_f32(10, 1.0)
+            .expect_err("u32 register should reject f32 write");
+        assert!(
+            f32_err.to_string().contains("expects float"),
+            "unexpected error: {f32_err}"
+        );
+
+        let u32_err = motor
+            .write_register_u32(22, 1)
+            .expect_err("float register should reject u32 write");
+        assert!(
+            u32_err.to_string().contains("expects uint32"),
+            "unexpected error: {u32_err}"
+        );
     }
 }

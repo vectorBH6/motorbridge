@@ -15,8 +15,14 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+
       - name: Cargo check
         run: cargo check --workspace
+
+      - name: Cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Cargo test
         run: cargo test --workspace --all-targets

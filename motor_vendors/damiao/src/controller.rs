@@ -1,5 +1,5 @@
 use crate::motor::DamiaoMotor;
-use motor_core::bus::{open_socketcan, open_socketcanfd, CanBus};
+use motor_core::bus::{open_can_bus, open_socketcanfd, CanBus};
 use motor_core::dm_serial::DmSerialBus;
 use motor_core::error::Result;
 use motor_core::vendor_controller::VendorController;
@@ -17,7 +17,7 @@ impl DamiaoController {
     }
 
     pub fn new_socketcan(channel: &str) -> Result<Self> {
-        Ok(Self::new(open_socketcan(channel)?))
+        Ok(Self::new(open_can_bus(channel)?))
     }
 
     pub fn new_socketcanfd(channel: &str) -> Result<Self> {

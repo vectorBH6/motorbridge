@@ -1,5 +1,5 @@
 use crate::motor::TemplateMotor;
-use motor_core::bus::{open_socketcan, CanBus};
+use motor_core::bus::{open_can_bus, CanBus};
 use motor_core::error::Result;
 use motor_core::vendor_controller::VendorController;
 use std::sync::Arc;
@@ -16,7 +16,7 @@ impl TemplateController {
     }
 
     pub fn new_socketcan(channel: &str) -> Result<Self> {
-        Ok(Self::new(open_socketcan(channel)?))
+        Ok(Self::new(open_can_bus(channel)?))
     }
 
     pub fn add_motor(
