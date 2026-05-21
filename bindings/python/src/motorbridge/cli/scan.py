@@ -40,7 +40,7 @@ def _scan_robstride(args: argparse.Namespace, start_id: int, end_id: int) -> lis
     for fid in feedback_ids:
         _robstride_host_id(fid, "feedback-ids")
     param_id = _parse_id(args.param_id)
-    found: list[tuple[int, str]] = []
+    found_by_mid: dict[int, str] = {}
     print(
         f"[scan:robstride] channel={args.channel} model={args.model} "
         f"id_range=[0x{start_id:X},0x{end_id:X}] timeout_ms={args.timeout_ms} "
@@ -50,21 +50,23 @@ def _scan_robstride(args: argparse.Namespace, start_id: int, end_id: int) -> lis
         "[scan:robstride] note: probe/device_id is the motor ID; "
         "feedback_id/host_id is the host-side ID"
     )
-    controllers: list[tuple[int, Controller]] = []
-    try:
-        controllers = [(fid, Controller(args.channel)) for fid in feedback_ids]
-        for mid in range(start_id, end_id + 1):
-            hit_meta = None
-            for fid, ctrl in controllers:
+    for fid in feedback_ids:
+        ctrl = Controller(args.channel)
+        bound = False
+        try:
+            for mid in range(start_id, end_id + 1):
+                if mid in found_by_mid:
+                    continue
                 motor = ctrl.add_robstride_motor(mid, fid, args.model)
+                bound = True
                 try:
+                    hit_meta = None
                     try:
                         device_id, responder_id = motor.robstride_ping_host_id(fid, args.timeout_ms)
                         hit_meta = (
                             f"vendor=robstride via=ping feedback_id=0x{fid:X} "
                             f"device_id={device_id} responder_id={responder_id}"
                         )
-                        break
                     except Exception:
                         try:
                             value = motor.robstride_get_param_f32_host_id(
@@ -74,21 +76,26 @@ def _scan_robstride(args: argparse.Namespace, start_id: int, end_id: int) -> lis
                                 f"vendor=robstride via=read-param feedback_id=0x{fid:X} "
                                 f"param_id=0x{param_id:X} value={value}"
                             )
-                            break
                         except Exception:
                             # Keep probing next feedback candidate / next ID on timeout/no-response.
                             pass
+                    if hit_meta is not None:
+                        found_by_mid[mid] = hit_meta
+                        print(f"[hit] probe=0x{mid:02X} {hit_meta}")
                 finally:
                     motor.close()
-            if hit_meta is None:
-                print(f"[.. ] vendor=robstride probe=0x{mid:02X} no reply")
-            else:
-                found.append((mid, hit_meta))
-                print(f"[hit] probe=0x{mid:02X} {hit_meta}")
-    finally:
-        for _, ctrl in controllers:
-            ctrl.close_bus()
+        finally:
+            if bound:
+                ctrl.close_bus()
             ctrl.close()
+    found = [
+        (mid, found_by_mid[mid])
+        for mid in range(start_id, end_id + 1)
+        if mid in found_by_mid
+    ]
+    for mid in range(start_id, end_id + 1):
+        if mid not in found_by_mid:
+            print(f"[.. ] vendor=robstride probe=0x{mid:02X} no reply")
     return found
 
 def _scan_myactuator(args: argparse.Namespace, start_id: int, end_id: int) -> list[tuple[int, str]]:

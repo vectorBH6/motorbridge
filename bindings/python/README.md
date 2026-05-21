@@ -42,13 +42,13 @@ Notes:
 ## Scope
 Packaging note:
 
-- Current package target version: `0.3.5`.
+- Current package target version: `0.3.6`.
 - Published wheel includes `motor_abi` shared library and `ws_gateway` binary for that platform.
 - After `pip install motorbridge`, gateway binary path is typically:
   `.../site-packages/motorbridge/bin/ws_gateway` (or `ws_gateway.exe` on Windows).
-- `0.3.5` keeps the public Python binding API stable while hardening ABI
-  locking, closed-handle checks, CoreController polling cleanup, Python
-  RobStride scan efficiency, and CLI/documentation alignment.
+- `0.3.6` keeps the public Python binding API stable while aligning Python CLI
+  and WebSocket gateway RobStride scans around sequential host-id probing for
+  Windows PCAN and Linux SocketCAN reliability.
 - The Python CLI is now implemented as a `motorbridge.cli` package, but
   `motorbridge-cli`, `python -m motorbridge.cli`, `python -m motorbridge`,
   `from motorbridge.cli import main`, and legacy flat run arguments remain

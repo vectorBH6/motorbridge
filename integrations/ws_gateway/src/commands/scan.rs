@@ -1,5 +1,7 @@
 use crate::model::{Target, Vendor};
+use motor_vendor_robstride::ParameterValue as RobstrideParameterValue;
 use serde_json::{json, Value};
+use std::collections::BTreeMap;
 use std::time::Duration;
 
 use super::{
@@ -50,41 +52,52 @@ fn cmd_scan_robstride(v: &Value, base: &Target) -> Result<Value, String> {
         push_unique(fid);
     }
 
-    let mut hits = Vec::new();
-    let ctrl = open_robstride_controller(base, transport)?;
-    for mid in start_id..=end_id {
-        let mut found = None;
-        for fid in &feedback_ids {
+    let mut hits_by_mid = BTreeMap::new();
+    for fid in &feedback_ids {
+        let ctrl = open_robstride_controller(base, transport)?;
+        let mut bound = false;
+        for mid in start_id..=end_id {
+            if hits_by_mid.contains_key(&mid) {
+                continue;
+            }
             let motor = match ctrl.add_motor(mid, *fid, &base.model) {
                 Ok(m) => m,
                 Err(_) => continue,
             };
-            if let Ok(p) = motor.ping(Duration::from_millis(timeout_ms)) {
-                found = Some(json!({
+            bound = true;
+            if let Ok(p) = motor.ping_with_host_id(*fid, Duration::from_millis(timeout_ms)) {
+                hits_by_mid.insert(
+                    mid,
+                    json!({
                     "probe": mid,
                     "via": "ping",
                     "feedback_id": fid,
                     "device_id": p.device_id,
                     "responder_id": p.responder_id
-                }));
-                break;
+                    }),
+                );
+                continue;
             }
-            if let Ok(val) = motor.get_parameter_f32(param_id, Duration::from_millis(timeout_ms)) {
-                found = Some(json!({
+            if let Ok(RobstrideParameterValue::F32(val)) =
+                motor.get_parameter_with_host_id(param_id, *fid, Duration::from_millis(timeout_ms))
+            {
+                hits_by_mid.insert(
+                    mid,
+                    json!({
                     "probe": mid,
                     "via": "read_param",
                     "feedback_id": fid,
                     "param_id": format!("0x{param_id:04X}"),
                     "value": val
-                }));
-                break;
+                    }),
+                );
             }
         }
-        if let Some(hit) = found {
-            hits.push(hit);
+        if bound {
+            let _ = ctrl.close_bus();
         }
     }
-    let _ = ctrl.close_bus();
+    let hits = hits_by_mid.into_values().collect::<Vec<_>>();
 
     Ok(json!({
         "vendor": "robstride",

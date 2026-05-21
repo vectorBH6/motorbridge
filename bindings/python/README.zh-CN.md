@@ -41,10 +41,10 @@
 
 ## 范围
 
-- 当前目标包版本：`0.3.5`。
-- `0.3.5` 保持 Python binding 公开 API 兼容，同时增强 ABI 锁保护、
-  已关闭 handle 检查、CoreController polling 生命周期、Python RobStride
-  scan 性能，以及 CLI/文档对齐。
+- 当前目标包版本：`0.3.6`。
+- `0.3.6` 保持 Python binding 公开 API 兼容，同时让 Python CLI 与
+  WebSocket gateway 的 RobStride scan 统一使用顺序 host-id 探测，以提升
+  Windows PCAN 与 Linux SocketCAN 下的可靠性。
 - Python CLI 现在实现为 `motorbridge.cli` 包，但 `motorbridge-cli`、
   `python -m motorbridge.cli`、`python -m motorbridge`、
   `from motorbridge.cli import main` 和旧式扁平 run 参数继续可用。

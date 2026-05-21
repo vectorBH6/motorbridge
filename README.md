@@ -15,11 +15,13 @@ Unified CAN motor control stack with a vendor-agnostic Rust core, stable C ABI, 
 - `motorbridge-studio`: https://github.com/tianrking/motorbridge-studio
   Standalone web control UI built on top of `ws_gateway`.
 
-## Update (2026-05): v0.3.5
+## Update (2026-05): v0.3.6
 
-- `v0.3.5` keeps the Python binding API stable while hardening the Rust ABI:
-  same-handle FFI calls are serialized, closed Python motor handles raise
-  `CallError`, and unbound controller operations now report a real error.
+- `v0.3.6` stabilizes RobStride scan behavior on Windows PCAN and Linux
+  SocketCAN by probing host/feedback IDs sequentially instead of keeping
+  competing receivers open on the same CAN channel.
+- Python CLI and WebSocket gateway RobStride scans now use exact
+  host-id-specific ping/parameter probes and skip already discovered motor IDs.
 - `CoreController` now stops the background polling worker on `Drop`, so users
   do not leak a receive thread when they forget to call `shutdown()` or
   `close_bus()`.

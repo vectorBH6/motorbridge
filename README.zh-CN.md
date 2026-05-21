@@ -15,11 +15,12 @@
 - `motorbridge-studio`：https://github.com/tianrking/motorbridge-studio
   基于 `ws_gateway` 的独立 Web 控制台。
 
-## 更新说明（2026-05）：v0.3.5
+## 更新说明（2026-05）：v0.3.6
 
-- `v0.3.5` 保持 Python binding 公开 API 兼容，同时增强 Rust ABI：
-  同一 handle 的 FFI 调用会被串行化，已关闭的 Python motor handle 会抛
-  `CallError`，未绑定 motor 的 controller 操作会返回明确错误。
+- `v0.3.6` 稳定 Windows PCAN 与 Linux SocketCAN 下的 RobStride 扫描：
+  host/feedback ID 改为顺序探测，避免同一 CAN 通道上存在互相竞争的接收者。
+- Python CLI 与 WebSocket gateway 的 RobStride scan 现在使用精确 host-id
+  ping/参数探测，并跳过已发现的 motor ID。
 - `CoreController` 在 `Drop` 时会停止后台 polling 线程，即使用户忘记调用
   `shutdown()` / `close_bus()` 也不会泄漏接收线程。
 - Python CLI 从单文件拆为 `motorbridge.cli` 包，但继续兼容

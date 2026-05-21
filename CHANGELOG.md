@@ -7,6 +7,31 @@ Versioning.
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-05-21
+
+### Fixed
+
+- Fixed Python CLI RobStride scans on Windows PCAN by probing one
+  host/feedback ID at a time, avoiding multiple active controllers and receive
+  workers on the same CAN channel.
+- Fixed Python CLI RobStride scan cleanup so unbound probe controllers are not
+  asked to `close_bus()`, removing the misleading `controller has no motor`
+  error after scan results.
+- Fixed WebSocket gateway RobStride scans to probe each requested host/feedback
+  ID exactly and sequentially. This also ensures later host IDs are actually
+  tested instead of being skipped after the first motor registration.
+
+### Added
+
+- Added Python scan regression coverage for the single-controller RobStride
+  probing behavior.
+
+### Changed
+
+- Python package version advanced to `0.3.6`.
+- Rust workspace package version advanced to `0.3.6` for release/tag alignment.
+- C++ package metadata advanced to `0.3.6`.
+
 ## [0.3.5] - 2026-05-20
 
 ### Added
